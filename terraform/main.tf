@@ -14,7 +14,7 @@ resource "google_cloud_run_service" "service" {
 
         env {
           name  = "SERVICE_URL"
-          value = ""
+          value = ""   #add the service URL here
         }
       }
     }

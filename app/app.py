@@ -31,83 +31,70 @@ if __name__ == "__main__":
 
 
 
-#### solution code
-# import os  # Used to read environment variables
-# import requests  # Used to make HTTP requests (metadata server + backend call)
-# import logging  # Used for logging errors and info
-# from flask import Flask, request  # Flask framework for web app and request handling
+#### Solution Code ####
+# import os
+# import requests
+# import logging
+# from flask import Flask, request
 
-# app = Flask(__name__)  # Create Flask application instance
+# app = Flask(__name__)
 
-# logging.basicConfig(level=logging.INFO)  # Set logging level to INFO for debugging
+# logging.basicConfig(level=logging.INFO)
 
-# SERVICE_URL = os.getenv("SERVICE_URL", "")  # Get backend Cloud Run service URL from environment
+# SERVICE_URL = os.getenv("SERVICE_URL", "")
 
-
-# def get_token():  # Function to fetch OIDC identity token from metadata server
-#     try:  # Start error handling block
-
+# def get_token():
+#     try:
 #         token_url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity"
-#         # Metadata server endpoint for generating identity token
 
 #         headers = {
 #             "Metadata-Flavor": "Google"
 #         }
-#         # Required header to access GCP metadata server
 
 #         params = {
 #             "audience": SERVICE_URL
 #         }
-#         # Audience specifies the target service (Cloud Run URL)
 
 #         response = requests.get(token_url, headers=headers, params=params, timeout=5)
-#         # Request OIDC token from metadata server
+#         response.raise_for_status()
 
-#         response.raise_for_status()  # Raise error if request fails
+#         return response.text
 
-#         return response.text  # Return identity token
+#     except Exception as e:
+#         logging.error(f"Token fetch failed: {str(e)}")
+#         return None
 
-#     except Exception as e:  # Catch any error during token fetch
-#         logging.error(f"Token fetch failed: {str(e)}")  # Log error message
-#         return None  # Return None if token retrieval fails
-
-
-# @app.route("/backend")  # Define backend route (protected service endpoint)
+# @app.route("/backend")
 # def backend():
+#     auth_header = request.headers.get("Authorization")
 
-#     auth_header = request.headers.get("Authorization")  # Get Authorization header
+#     if not auth_header:
+#         return "Unauthorized", 401
 
-#     if not auth_header:  # Check if header is missing
-#         return "Unauthorized", 401  # Reject request if no auth header
+#     if not auth_header.startswith("Bearer "):
+#         return "Invalid token", 403
 
-#     if not auth_header.startswith("Bearer "):  # Validate Bearer token format
-#         return "Invalid token", 403  # Reject invalid token format
+#     return "Secure backend response", 200
 
-#     return "Secure backend response", 200  # Return success response if valid
-
-
-# @app.route("/")  # Define frontend route (caller service)
+# @app.route("/")
 # def frontend():
+#     try:
+#         if not SERVICE_URL:
+#             return "ERROR: SERVICE_URL not set in environment", 500
 
-#     try:  # Start error handling block
+#         token = get_token()
 
-#         if not SERVICE_URL:  # Check if backend URL is configured
-#             return "ERROR: SERVICE_URL not set in environment", 500  # Fail if missing
-
-#         token = get_token()  # Fetch OIDC identity token
-
-#         if not token:  # Check if token retrieval failed
-#             return "ERROR: Failed to retrieve OIDC token", 500  # Return error
+#         if not token:
+#             return "ERROR: Failed to retrieve OIDC token", 500
 
 #         headers = {
 #             "Authorization": f"Bearer {token}"
 #         }
-#         # Attach Bearer token for authentication
 
 #         response = requests.get(
-#             f"{SERVICE_URL}/backend",  # Backend endpoint URL
-#             headers=headers,  # Send authentication header
-#             timeout=5  # Request timeout
+#             f"{SERVICE_URL}/backend",
+#             headers=headers,
+#             timeout=5
 #         )
 
 #         return f"""
@@ -126,15 +113,11 @@ if __name__ == "__main__":
 # ========================================
 # </div>
 # """
-#         # Return formatted HTML response
 
-#     except Exception as e:  # Catch any frontend errors
-#         logging.error(f"Frontend error: {str(e)}")  # Log error
-#         return f"Error: {str(e)}", 500  # Return error response
+#     except Exception as e:
+#         logging.error(f"Frontend error: {str(e)}")
+#         return f"Error: {str(e)}", 500
 
-
-# if __name__ == "__main__":  # Entry point of the application
-
-#     port = int(os.environ.get("PORT", 8080))  # Get port from environment (Cloud Run uses 8080)
-
-#     app.run(host="0.0.0.0", port=port)  # Run Flask app on all network interfaces
+# if __name__ == "__main__":
+#     port = int(os.environ.get("PORT", 8080))
+#     app.run(host="0.0.0.0", port=port)
